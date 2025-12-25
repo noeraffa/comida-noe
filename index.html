@@ -3,69 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Comidas - Noe</title>
+    <title>Recetario Noe</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --accent: #f59e0b; --bg: #fffbeb; --dark: #451a03; --danger: #ef4444; --healthy: #10b981; }
-        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
+        :root { --accent: #f59e0b; --bg: #fffbeb; --dark: #451a03; --healthy: #10b981; --link: #3b82f6; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
         .container { max-width: 500px; margin: auto; }
         
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #fde68a; }
-        input, select, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #fde68a; font-size: 16px; box-sizing: border-box; }
+        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #fde68a; font-size: 16px; box-sizing: border-box; font-family: inherit; }
+        textarea { height: 100px; resize: vertical; }
         
         .btn-add { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; }
         .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; }
         .btn-filter { background: white; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; flex: 1; }
         .btn-filter.active { background: var(--accent); color: white; }
-        .btn-filter.healthy-mode.active { background: var(--healthy); border-color: var(--healthy); }
 
         .comida-card { background: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid #fde68a; margin-top: 12px; position: relative; }
         .sana-tag { position: absolute; top: -10px; right: 10px; background: var(--healthy); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
         
-        .momento-badge { font-size: 0.75rem; background: #fef3c7; padding: 4px 10px; border-radius: 8px; font-weight: bold; color: #92400e; }
-        .ingredientes { font-size: 0.9rem; color: #78350f; margin-top: 8px; opacity: 0.8; }
-        
-        .actions { display: flex; gap: 10px; margin-top: 12px; border-top: 1px solid #fff7ed; padding-top: 10px; }
+        .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; border-top: 1px solid #fff7ed; padding-top: 10px; }
         .btn-small { width: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0; background: #fffcf0; border: 1px solid #fde68a; color: #b45309; font-weight: 600; cursor: pointer; }
-        .btn-del { color: var(--danger); border-color: #fee2e2; background: #fff5f5; }
         
-        .sticky-search { position: sticky; top: 10px; z-index: 100; border: 2px solid var(--accent); }
+        /* Estilos del Modal (Ventana de Receta) */
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; position: relative; }
+        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    
-    <div class="card sticky-search">
-        <h3>🔍 ¿Qué cocinamos hoy?</h3>
-        <input type="text" id="buscador" placeholder="Buscá ingredientes..." onkeyup="filtrar()">
+    <div class="card" style="position: sticky; top: 10px; z-index: 100; border: 2px solid var(--accent);">
+        <h3>🔍 Buscador</h3>
+        <input type="text" id="buscador" placeholder="Ingrediente o plato..." onkeyup="filtrar()">
         <div class="filter-bar">
-            <button class="btn-filter" id="btnVerTodo" onclick="setModo('todo')">🌐 Ver Todo</button>
-            <button class="btn-filter healthy-mode" id="btnSanas" onclick="setModo('sana')">🥗 Solo Sanas</button>
+            <button class="btn-filter" id="btnVerTodo" onclick="setModo('todo')">🌐 Todo</button>
+            <button class="btn-filter" id="btnSanas" onclick="setModo('sana')">🥗 Sanas</button>
         </div>
     </div>
 
     <div id="lista"></div>
 
-    <hr style="margin: 40px 0; border: none; border-top: 2px dashed #fcd34d;">
-
     <div class="card">
-        <h3>➕ Agregar Nuevo Plato</h3>
-        <input type="text" id="new_comida" placeholder="Nombre de la comida">
+        <h3>➕ Nueva Comida</h3>
+        <input type="text" id="new_comida" placeholder="Nombre del plato">
         <input type="text" id="new_ing1" placeholder="Ingrediente 1">
         <input type="text" id="new_ing2" placeholder="Ingrediente 2">
         <input type="text" id="new_ing3" placeholder="Ingrediente 3">
+        <input type="url" id="new_link" placeholder="Link (YouTube/Insta)">
+        <textarea id="new_receta" placeholder="Escribe aquí los pasos de la receta..."></textarea>
         <select id="new_momento">
             <option value="">¿Momento ideal?</option>
             <option value="Almuerzo">Almuerzo</option>
             <option value="Cena">Cena</option>
-            <option value="Desayuno">Desayuno</option>
-            <option value="Merienda">Merienda</option>
         </select>
-        <label style="display: flex; align-items: center; gap: 10px; padding: 10px; font-weight: bold; color: var(--healthy);">
-            <input type="checkbox" id="new_sana" style="width: auto;"> 🥗 Es una comida sana
+        <label style="display: flex; align-items: center; gap: 10px; color: var(--healthy); font-weight: bold;">
+            <input type="checkbox" id="new_sana" style="width: auto;"> 🥗 Es sana
         </label>
         <button class="btn-add" onclick="agregarComida()">Guardar Plato</button>
+    </div>
+</div>
+
+<div id="modal" onclick="cerrarModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <span class="close-modal" onclick="cerrarModal()">&times;</span>
+        <h2 id="modal-titulo"></h2>
+        <div id="modal-cuerpo" style="white-space: pre-wrap; line-height: 1.6; color: #555;"></div>
+        <div id="modal-link" style="margin-top: 20px;"></div>
     </div>
 </div>
 
@@ -75,24 +80,20 @@
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let comidas = [];
-    let modoFiltro = 'nada'; // nada, todo, sana
+    let modoFiltro = 'nada';
 
     async function cargar() {
-        const { data, error } = await _supabase.from('comidas').select('*').order('Comida', { ascending: true });
-        if (error) return;
-        comidas = data;
-        renderizarMensaje();
+        const { data } = await _supabase.from('comidas').select('*').order('Comida', { ascending: true });
+        comidas = data || [];
+        filtrar();
     }
 
     function setModo(modo) {
         modoFiltro = modo;
-        document.getElementById('btnVerTodo').classList.toggle('active', modo === 'todo');
-        document.getElementById('btnSanas').classList.toggle('active', modo === 'sana');
+        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
+        if(modo === 'todo') document.getElementById('btnVerTodo').classList.add('active');
+        if(modo === 'sana') document.getElementById('btnSanas').classList.add('active');
         filtrar();
-    }
-
-    function renderizarMensaje() {
-        document.getElementById('lista').innerHTML = '<p style="text-align:center; color:#999; margin-top:30px;">Escribe algo o elegí un filtro arriba</p>';
     }
 
     function filtrar() {
@@ -100,81 +101,67 @@
         const listaDiv = document.getElementById('lista');
         
         if (busqueda === "" && modoFiltro === 'nada') {
-            renderizarMensaje();
+            listaDiv.innerHTML = '<p style="text-align:center; color:#999; margin-top:30px;">Busca algo para cocinar...</p>';
             return;
         }
 
         let filtradas = comidas.filter(c => {
-            const texto = `${c["Comida"]} ${c["Ingrediente 1"]} ${c["Ingrediente 2"]} ${c["Ingrediente 3"]}`.toLowerCase();
+            const texto = `${c["Comida"]} ${c["Ingrediente 1"]} ${c["Ingrediente 2"]}`.toLowerCase();
             const cumpleBusqueda = texto.includes(busqueda);
             const cumpleSana = modoFiltro === 'sana' ? c.es_sana : true;
             return cumpleBusqueda && cumpleSana;
         });
 
-        renderizar(filtradas);
-    }
-
-    function renderizar(lista) {
-        const listaDiv = document.getElementById('lista');
         listaDiv.innerHTML = '';
-        
-        lista.forEach(c => {
+        filtradas.forEach(c => {
+            const tieneReceta = c.link_receta || c.receta_escrita;
             listaDiv.innerHTML += `
                 <div class="comida-card">
                     ${c.es_sana ? '<span class="sana-tag">🥗 SANA</span>' : ''}
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
-                        <strong>${c["Comida"]}</strong>
-                        <span class="momento-badge">${c["momento_ideal"] || c["Categoría"] || 'Gral'}</span>
-                    </div>
-                    <div class="ingredientes">${[c["Ingrediente 1"], c["Ingrediente 2"], c["Ingrediente 3"]].filter(i => i).join(' • ')}</div>
+                    <strong>${c["Comida"]}</strong>
+                    <div class="ingredientes">${[c["Ingrediente 1"], c["Ingrediente 2"]].filter(i => i).join(' • ')}</div>
                     <div class="actions">
-                        <button class="btn-small" onclick="editarMomento(${c.id})">✏️ Clasificar</button>
-                        <button class="btn-small ${c.es_sana ? 'btn-del' : ''}" onclick="toggleSana(${c.id}, ${c.es_sana})">
-                            ${c.es_sana ? '✕ No es sana' : '🥗 Marcar sana'}
-                        </button>
-                        <button class="btn-small btn-del" onclick="eliminarComida(${c.id})">🗑️</button>
+                        ${tieneReceta ? `<button class="btn-small" style="background:#e0f2fe; color:#0369a1" onclick="verReceta(${c.id})">📖 Ver Receta</button>` : ''}
+                        <button class="btn-small" onclick="toggleSana(${c.id}, ${c.es_sana})">🥗</button>
+                        <button class="btn-small" style="color:red" onclick="eliminarComida(${c.id})">🗑️</button>
                     </div>
-                </div>
-            `;
+                </div>`;
         });
     }
 
-    async function toggleSana(id, estadoActual) {
-        await _supabase.from('comidas').update({ es_sana: !estadoActual }).eq('id', id);
-        cargar();
+    function verReceta(id) {
+        const c = comidas.find(item => item.id === id);
+        document.getElementById('modal-titulo').innerText = c["Comida"];
+        document.getElementById('modal-cuerpo').innerText = c.receta_escrita || "No hay instrucciones escritas.";
+        document.getElementById('modal-link').innerHTML = c.link_receta ? `<a href="${c.link_receta}" target="_blank" style="color:var(--link); font-weight:bold;">🔗 Ver link externo</a>` : '';
+        document.getElementById('modal').style.display = 'flex';
     }
+
+    function cerrarModal() { document.getElementById('modal').style.display = 'none'; }
 
     async function agregarComida() {
         const nombre = document.getElementById('new_comida').value;
         if (!nombre) return alert("Nombre obligatorio");
-
         await _supabase.from('comidas').insert([{
             "Comida": nombre,
             "Ingrediente 1": document.getElementById('new_ing1').value,
             "Ingrediente 2": document.getElementById('new_ing2').value,
             "Ingrediente 3": document.getElementById('new_ing3').value,
+            "link_receta": document.getElementById('new_link').value,
+            "receta_escrita": document.getElementById('new_receta').value,
             "momento_ideal": document.getElementById('new_momento').value,
             "es_sana": document.getElementById('new_sana').checked
         }]);
+        location.reload();
+    }
 
-        document.querySelectorAll('input[type="text"]').forEach(i => i.value = '');
-        document.getElementById('new_sana').checked = false;
+    async function toggleSana(id, estado) {
+        await _supabase.from('comidas').update({ es_sana: !estado }).eq('id', id);
         cargar();
     }
 
     async function eliminarComida(id) {
-        if (confirm("¿Eliminar?")) {
-            await _supabase.from('comidas').delete().eq('id', id);
-            cargar();
-        }
-    }
-
-    async function editarMomento(id) {
-        const n = prompt("Momento:");
-        if (n) {
-            await _supabase.from('comidas').update({ momento_ideal: n }).eq('id', id);
-            cargar();
-        }
+        if (confirm("¿Borrar?")) { await _supabase.from('comidas').delete().eq('id', id); cargar(); }
     }
 
     cargar();
