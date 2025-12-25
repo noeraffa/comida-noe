@@ -6,60 +6,59 @@
     <title>Recetario Noe</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        :root { --accent: #f59e0b; --bg: #fffbeb; --dark: #451a03; --healthy: #10b981; --link: #3b82f6; }
-        body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
+        :root { --accent: #f59e0b; --bg: #fffbeb; --dark: #451a03; --healthy: #10b981; --link: #3b82f6; --danger: #ef4444; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--dark); }
         .container { max-width: 500px; margin: auto; }
         
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #fde68a; }
-        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #fde68a; font-size: 16px; box-sizing: border-box; font-family: inherit; }
+        input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #fde68a; font-size: 16px; box-sizing: border-box; font-family: inherit; outline: none; }
         textarea { height: 100px; resize: vertical; }
         
         .btn-add { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; }
         .filter-bar { display: flex; gap: 8px; margin-bottom: 10px; }
-        .btn-filter { background: white; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; flex: 1; }
+        .btn-filter { background: white; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 10px; font-size: 0.8rem; cursor: pointer; flex: 1; font-weight: bold; }
         .btn-filter.active { background: var(--accent); color: white; }
 
-        .comida-card { background: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid #fde68a; margin-top: 12px; position: relative; }
+        .comida-card { background: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid #fde68a; margin-top: 12px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.03); }
         .sana-tag { position: absolute; top: -10px; right: 10px; background: var(--healthy); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
         
         .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; border-top: 1px solid #fff7ed; padding-top: 10px; }
-        .btn-small { width: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0; background: #fffcf0; border: 1px solid #fde68a; color: #b45309; font-weight: 600; cursor: pointer; }
+        .btn-small { width: auto; padding: 6px 12px; font-size: 0.8rem; margin: 0; background: #fffcf0; border: 1px solid #fde68a; color: #b45309; font-weight: 600; cursor: pointer; border-radius: 8px; }
         
-        /* Estilos del Modal (Ventana de Receta) */
-        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
+        #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; backdrop-filter: blur(3px); }
         .modal-content { background: white; padding: 25px; border-radius: 20px; max-width: 500px; width: 100%; max-height: 80vh; overflow-y: auto; position: relative; }
-        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 24px; cursor: pointer; }
+        .close-modal { position: absolute; top: 15px; right: 15px; font-size: 28px; cursor: pointer; color: #999; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="card" style="position: sticky; top: 10px; z-index: 100; border: 2px solid var(--accent);">
-        <h3>🔍 Buscador</h3>
+        <h3>🔍 ¿Qué buscamos?</h3>
         <input type="text" id="buscador" placeholder="Ingrediente o plato..." onkeyup="filtrar()">
         <div class="filter-bar">
-            <button class="btn-filter" id="btnVerTodo" onclick="setModo('todo')">🌐 Todo</button>
-            <button class="btn-filter" id="btnSanas" onclick="setModo('sana')">🥗 Sanas</button>
+            <button class="btn-filter" id="btnVerTodo" onclick="setModo('todo')">🌐 Ver Todo</button>
+            <button class="btn-filter" id="btnSanas" onclick="setModo('sana')">🥗 Solo Sanas</button>
         </div>
     </div>
 
     <div id="lista"></div>
 
     <div class="card">
-        <h3>➕ Nueva Comida</h3>
+        <h3>➕ Agregar Comida</h3>
         <input type="text" id="new_comida" placeholder="Nombre del plato">
         <input type="text" id="new_ing1" placeholder="Ingrediente 1">
         <input type="text" id="new_ing2" placeholder="Ingrediente 2">
         <input type="text" id="new_ing3" placeholder="Ingrediente 3">
-        <input type="url" id="new_link" placeholder="Link (YouTube/Insta)">
+        <input type="url" id="new_link" placeholder="Link (YouTube/Instagram)">
         <textarea id="new_receta" placeholder="Escribe aquí los pasos de la receta..."></textarea>
         <select id="new_momento">
             <option value="">¿Momento ideal?</option>
             <option value="Almuerzo">Almuerzo</option>
             <option value="Cena">Cena</option>
         </select>
-        <label style="display: flex; align-items: center; gap: 10px; color: var(--healthy); font-weight: bold;">
-            <input type="checkbox" id="new_sana" style="width: auto;"> 🥗 Es sana
+        <label style="display: flex; align-items: center; gap: 10px; color: var(--healthy); font-weight: bold; padding: 5px;">
+            <input type="checkbox" id="new_sana" style="width: auto; margin: 0;"> 🥗 Es una comida sana
         </label>
         <button class="btn-add" onclick="agregarComida()">Guardar Plato</button>
     </div>
@@ -68,8 +67,8 @@
 <div id="modal" onclick="cerrarModal()">
     <div class="modal-content" onclick="event.stopPropagation()">
         <span class="close-modal" onclick="cerrarModal()">&times;</span>
-        <h2 id="modal-titulo"></h2>
-        <div id="modal-cuerpo" style="white-space: pre-wrap; line-height: 1.6; color: #555;"></div>
+        <h2 id="modal-titulo" style="color: var(--accent); margin-top: 0;"></h2>
+        <div id="modal-cuerpo" style="white-space: pre-wrap; line-height: 1.6; color: #444; background: #fafafa; padding: 15px; border-radius: 10px;"></div>
         <div id="modal-link" style="margin-top: 20px;"></div>
     </div>
 </div>
@@ -80,19 +79,24 @@
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let comidas = [];
-    let modoFiltro = 'nada';
+    let modoFiltro = 'nada'; 
 
     async function cargar() {
-        const { data } = await _supabase.from('comidas').select('*').order('Comida', { ascending: true });
+        const { data, error } = await _supabase.from('comidas').select('*').order('Comida', { ascending: true });
+        if (error) return console.error(error);
         comidas = data || [];
-        filtrar();
+        if(modoFiltro === 'nada') {
+            document.getElementById('lista').innerHTML = '<p style="text-align:center; color:#999; margin-top:30px;">Escribe algo o elige un filtro para empezar</p>';
+        } else {
+            filtrar();
+        }
     }
 
     function setModo(modo) {
-        modoFiltro = modo;
-        document.querySelectorAll('.btn-filter').forEach(b => b.classList.remove('active'));
-        if(modo === 'todo') document.getElementById('btnVerTodo').classList.add('active');
-        if(modo === 'sana') document.getElementById('btnSanas').classList.add('active');
+        modoFiltro = (modoFiltro === modo) ? 'nada' : modo;
+        document.getElementById('btnVerTodo').classList.toggle('active', modoFiltro === 'todo');
+        document.getElementById('btnSanas').classList.toggle('active', modoFiltro === 'sana');
+        if (modoFiltro === 'nada') document.getElementById('buscador').value = '';
         filtrar();
     }
 
@@ -101,29 +105,34 @@
         const listaDiv = document.getElementById('lista');
         
         if (busqueda === "" && modoFiltro === 'nada') {
-            listaDiv.innerHTML = '<p style="text-align:center; color:#999; margin-top:30px;">Busca algo para cocinar...</p>';
+            document.getElementById('lista').innerHTML = '<p style="text-align:center; color:#999; margin-top:30px;">Escribe algo o elige un filtro para empezar</p>';
             return;
         }
 
         let filtradas = comidas.filter(c => {
-            const texto = `${c["Comida"]} ${c["Ingrediente 1"]} ${c["Ingrediente 2"]}`.toLowerCase();
+            const texto = `${c["Comida"]} ${c["Ingrediente 1"]} ${c["Ingrediente 2"]} ${c["Ingrediente 3"]}`.toLowerCase();
             const cumpleBusqueda = texto.includes(busqueda);
             const cumpleSana = modoFiltro === 'sana' ? c.es_sana : true;
             return cumpleBusqueda && cumpleSana;
         });
 
         listaDiv.innerHTML = '';
+        if (filtradas.length === 0) {
+            listaDiv.innerHTML = '<p style="text-align:center; color:#999; margin-top:30px;">No se encontró nada...</p>';
+            return;
+        }
+
         filtradas.forEach(c => {
-            const tieneReceta = c.link_receta || c.receta_escrita;
+            const tieneDetalles = c.link_receta || c.receta_escrita;
             listaDiv.innerHTML += `
                 <div class="comida-card">
                     ${c.es_sana ? '<span class="sana-tag">🥗 SANA</span>' : ''}
-                    <strong>${c["Comida"]}</strong>
+                    <strong style="font-size: 1.1rem;">${c["Comida"]}</strong>
                     <div class="ingredientes">${[c["Ingrediente 1"], c["Ingrediente 2"]].filter(i => i).join(' • ')}</div>
                     <div class="actions">
-                        ${tieneReceta ? `<button class="btn-small" style="background:#e0f2fe; color:#0369a1" onclick="verReceta(${c.id})">📖 Ver Receta</button>` : ''}
-                        <button class="btn-small" onclick="toggleSana(${c.id}, ${c.es_sana})">🥗</button>
-                        <button class="btn-small" style="color:red" onclick="eliminarComida(${c.id})">🗑️</button>
+                        ${tieneDetalles ? `<button class="btn-small" style="background:#e0f2fe; color:#0369a1; border-color:#bae6fd" onclick="verReceta(${c.id})">📖 Ver Receta</button>` : ''}
+                        <button class="btn-small" onclick="toggleSana(${c.id}, ${c.es_sana})">${c.es_sana ? '🥗 Quitar Sana' : '🥗 Es Sana'}</button>
+                        <button class="btn-small" style="color:var(--danger); border-color:#fecaca" onclick="eliminarComida(${c.id})">🗑️</button>
                     </div>
                 </div>`;
         });
@@ -132,8 +141,8 @@
     function verReceta(id) {
         const c = comidas.find(item => item.id === id);
         document.getElementById('modal-titulo').innerText = c["Comida"];
-        document.getElementById('modal-cuerpo').innerText = c.receta_escrita || "No hay instrucciones escritas.";
-        document.getElementById('modal-link').innerHTML = c.link_receta ? `<a href="${c.link_receta}" target="_blank" style="color:var(--link); font-weight:bold;">🔗 Ver link externo</a>` : '';
+        document.getElementById('modal-cuerpo').innerText = c.receta_escrita || "Instrucciones no cargadas.";
+        document.getElementById('modal-link').innerHTML = c.link_receta ? `<a href="${c.link_receta}" target="_blank" style="color:var(--link); font-weight:bold; text-decoration: none;">🔗 Abrir link de la receta</a>` : '';
         document.getElementById('modal').style.display = 'flex';
     }
 
@@ -141,8 +150,9 @@
 
     async function agregarComida() {
         const nombre = document.getElementById('new_comida').value;
-        if (!nombre) return alert("Nombre obligatorio");
-        await _supabase.from('comidas').insert([{
+        if (!nombre) return alert("El nombre es obligatorio");
+
+        const { error } = await _supabase.from('comidas').insert([{
             "Comida": nombre,
             "Ingrediente 1": document.getElementById('new_ing1').value,
             "Ingrediente 2": document.getElementById('new_ing2').value,
@@ -152,7 +162,13 @@
             "momento_ideal": document.getElementById('new_momento').value,
             "es_sana": document.getElementById('new_sana').checked
         }]);
-        location.reload();
+
+        if (error) {
+            alert("Error: " + error.message);
+        } else {
+            alert("¡Guardado!");
+            location.reload();
+        }
     }
 
     async function toggleSana(id, estado) {
@@ -161,7 +177,10 @@
     }
 
     async function eliminarComida(id) {
-        if (confirm("¿Borrar?")) { await _supabase.from('comidas').delete().eq('id', id); cargar(); }
+        if (confirm("¿Borrar este plato?")) {
+            await _supabase.from('comidas').delete().eq('id', id);
+            cargar();
+        }
     }
 
     cargar();
