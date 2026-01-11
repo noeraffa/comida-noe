@@ -3,35 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Comidas - Noe FINAL</title>
+    <title>Mis Comidas - Noe FINAL Unificada</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root { --accent: #f59e0b; --bg: #fffbeb; --dark: #451a03; --danger: #ef4444; --healthy: #10b981; --wa: #25d366; --magic: #8b5cf6; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 15px; color: var(--dark); padding-bottom: 50px; }
         .container { max-width: 500px; margin: auto; }
-        
         #stats { background: white; padding: 12px; border-radius: 15px; border: 1px solid #fde68a; text-align: center; margin-bottom: 15px; font-size: 0.9rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-
         .card { background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; border: 1px solid #fde68a; }
         input, select, button, textarea { width: 100%; padding: 12px; margin: 8px 0; border-radius: 12px; border: 1px solid #fde68a; font-size: 16px; box-sizing: border-box; }
-        
         .btn-add { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; }
         .btn-magic { background: var(--magic); color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 0.85rem; }
-
         .filter-group { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 10px; }
         .btn-filter { background: white; border: 1px solid var(--accent); color: var(--accent); padding: 8px; border-radius: 10px; font-size: 0.75rem; cursor: pointer; flex: 1; min-width: 80px; }
         .btn-filter.active { background: var(--accent); color: white; }
-
         .comida-card { background: white; padding: 15px; border-radius: 15px; border-bottom: 4px solid #fde68a; margin-top: 12px; position: relative; }
         .sana-tag { position: absolute; top: -10px; right: 10px; background: var(--healthy); color: white; font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: bold; }
         .ingredientes { font-size: 0.85rem; color: #6b7280; margin: 5px 0; }
-        
         .actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; border-top: 1px solid #fff7ed; padding-top: 10px; }
         .btn-small { width: auto; padding: 6px 10px; font-size: 0.75rem; margin: 0; background: #fffcf0; border: 1px solid #fde68a; color: #b45309; font-weight: 600; cursor: pointer; border-radius: 8px; }
-        
         #modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
         .modal-content { background: white; padding: 25px; border-radius: 20px; max-width: 500px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; }
-        
         .sticky-search { position: sticky; top: 10px; z-index: 100; border: 2px solid var(--accent); }
     </style>
 </head>
@@ -48,7 +40,7 @@
             <button class="btn-filter" id="f-Merienda" onclick="setCategoria('Merienda')">🍰 Merienda</button>
             <button class="btn-filter" id="f-sana" onclick="setCategoria('sana')">🥗 Sanas</button>
         </div>
-        <button class="btn-magic" onclick="sugerenciaAzar()">🎲 No sé qué cocinar, elegí por mí</button>
+        <button class="btn-magic" onclick="sugerenciaAzar()">🎲 No sé qué cocinar, sugerime algo</button>
     </div>
 
     <div id="lista"></div>
@@ -57,9 +49,7 @@
         <h3 id="form-titulo">➕ Nueva Comida</h3>
         <input type="hidden" id="edit_id">
         <input type="text" id="new_comida" placeholder="Nombre de la comida">
-        <input type="text" id="new_ing1" placeholder="Ingrediente 1">
-        <input type="text" id="new_ing2" placeholder="Ingrediente 2">
-        <input type="text" id="new_ing3" placeholder="Ingrediente 3">
+        <input type="text" id="new_ingredientes" placeholder="Ingredientes (ej: Pollo, arroz, cebolla)">
         <input type="url" id="new_link" placeholder="Link receta (Opcional)">
         <textarea id="new_receta" placeholder="Pasos de la receta..."></textarea>
         <select id="new_momento">
@@ -82,7 +72,7 @@
         <h2 id="modal-titulo"></h2>
         <div id="modal-cuerpo" style="white-space: pre-wrap; color: #444; font-size: 1.1rem;"></div>
         <div id="modal-link" style="margin-top: 20px;"></div>
-        <button onclick="cerrarModal()" style="margin-top: 20px; background: #f3f4f6; border: none; font-weight: bold; padding: 15px;">Cerrar Receta</button>
+        <button onclick="cerrarModal()" style="margin-top: 20px; background: #f3f4f6; border: none; font-weight: bold; padding: 15px; width: 100%;">Cerrar Receta</button>
     </div>
 </div>
 
@@ -122,8 +112,10 @@
 
         filtradasActuales = comidas.filter(c => {
             const m = (c["momento_ideal"] || "").toLowerCase();
-            const contenido = `${c["Comida"]} ${c["Ingrediente 1"]} ${c["Ingrediente 2"]} ${c["Ingrediente 3"]}`.toLowerCase();
+            const ingTotal = (c["Ingrediente 1"] || ""); // Usaremos la columna 1 para guardar todo el string
+            const contenido = `${c["Comida"]} ${ingTotal}`.toLowerCase();
             const cumpleBusqueda = busqueda === "" || contenido.includes(busqueda);
+            
             let cumpleCat = true;
             if (categoriaActual === 'principales') cumpleCat = (m.includes('almuerzo') || m.includes('cena'));
             else if (categoriaActual === 'sana') cumpleCat = c.es_sana;
@@ -139,13 +131,17 @@
         const listaDiv = document.getElementById('lista');
         listaDiv.innerHTML = lista.length === 0 ? '<p style="text-align:center;">No hay resultados.</p>' : '';
         lista.forEach(c => {
+            const ingredientesRaw = c["Ingrediente 1"] || "";
+            const ingredientesVisibles = ingredientesRaw.split(',').join(' • ');
+            const ingredientesWA = ingredientesRaw.split(',').map(i => i.trim()).join('\n- ');
             const tieneReceta = c.link_receta || c.receta_escrita;
-            const msgWA = encodeURIComponent(`*${c["Comida"]}*\nIngredientes:\n- ${[c["Ingrediente 1"], c["Ingrediente 2"], c["Ingrediente 3"]].filter(i=>i).join('\n- ')}`);
+            const msgWA = encodeURIComponent(`*${c["Comida"]}*\nIngredientes:\n- ${ingredientesWA}`);
+
             listaDiv.innerHTML += `
                 <div class="comida-card">
                     ${c.es_sana ? '<span class="sana-tag">🥗 SANA</span>' : ''}
                     <strong>${c["Comida"]}</strong>
-                    <div class="ingredientes">${[c["Ingrediente 1"], c["Ingrediente 2"], c["Ingrediente 3"]].filter(i => i).join(' • ')}</div>
+                    <div class="ingredientes">${ingredientesVisibles}</div>
                     <div class="actions">
                         ${tieneReceta ? `<button class="btn-small" style="background:#e0f2fe; color:#0369a1" onclick="verReceta(${c.id})">📖 Receta</button>` : ''}
                         <button class="btn-small" onclick="editarComida(${c.id})">✏️ Editar</button>
@@ -157,7 +153,7 @@
     }
 
     function sugerenciaAzar() {
-        if (filtradasActuales.length === 0) return alert("Primero elegí una categoría o hacé una búsqueda.");
+        if (filtradasActuales.length === 0) return alert("Hacé una búsqueda o elegí categoría primero.");
         const elegido = filtradasActuales[Math.floor(Math.random() * filtradasActuales.length)];
         verReceta(elegido.id);
     }
@@ -168,8 +164,6 @@
         document.getElementById('modal-cuerpo').innerText = c.receta_escrita || "No hay instrucciones escritas.";
         document.getElementById('modal-link').innerHTML = c.link_receta ? `<a href="${c.link_receta}" target="_blank" style="color:var(--link); font-weight:bold;">🔗 Ver receta externa</a>` : '';
         document.getElementById('modal').style.display = 'flex';
-        
-        // Mantener pantalla encendida
         try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
     }
 
@@ -184,23 +178,25 @@
         if (!nombre) return alert("Nombre obligatorio");
         const btn = document.getElementById('btn-guardar');
         btn.disabled = true;
+
         const datos = {
-            "Comida": nombre, "Ingrediente 1": document.getElementById('new_ing1').value,
-            "Ingrediente 2": document.getElementById('new_ing2').value, "Ingrediente 3": document.getElementById('new_ing3').value,
-            "link_receta": document.getElementById('new_link').value, "receta_escrita": document.getElementById('new_receta').value,
-            "momento_ideal": document.getElementById('new_momento').value, "es_sana": document.getElementById('new_sana').checked
+            "Comida": nombre,
+            "Ingrediente 1": document.getElementById('new_ingredientes').value, // Guardamos todo aquí
+            "link_receta": document.getElementById('new_link').value,
+            "receta_escrita": document.getElementById('new_receta').value,
+            "momento_ideal": document.getElementById('new_momento').value,
+            "es_sana": document.getElementById('new_sana').checked
         };
+
         const { error } = id ? await _supabase.from('comidas').update(datos).eq('id', id) : await _supabase.from('comidas').insert([datos]);
-        if (!error) { cancelarEdicion(); await cargar(); } else { alert("Error al guardar"); btn.disabled = false; }
+        if (!error) { cancelarEdicion(); await cargar(); } else { alert("Error"); btn.disabled = false; }
     }
 
     function editarComida(id) {
         const c = comidas.find(item => item.id === id);
         document.getElementById('edit_id').value = c.id;
         document.getElementById('new_comida').value = c.Comida;
-        document.getElementById('new_ing1').value = c["Ingrediente 1"] || "";
-        document.getElementById('new_ing2').value = c["Ingrediente 2"] || "";
-        document.getElementById('new_ing3').value = c["Ingrediente 3"] || "";
+        document.getElementById('new_ingredientes').value = c["Ingrediente 1"] || "";
         document.getElementById('new_link').value = c.link_receta || "";
         document.getElementById('new_receta').value = c.receta_escrita || "";
         document.getElementById('new_momento').value = c.momento_ideal || "";
